@@ -1,0 +1,66 @@
+- name: Install kubectl, aws-cli, and Helm
+  hosts: bastion
+  remote_user: ubuntu
+  become: true
+
+  tasks:
+    - name: Install dependencies
+      become: true
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+          - unzip  # Add unzip package
+
+    - name: Add Kubernetes apt key
+      become: true
+      apt_key:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        state: present
+
+    - name: Add Kubernetes apt repository
+      become: true
+      apt_repository:
+        repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+        state: present
+
+    - name: Install kubectl
+      become: true
+      apt:
+        name: kubectl
+        state: present
+
+    - name: Install unzip
+      become: true
+      apt:
+        name: unzip
+        state: present
+
+    - name: Download AWS CLI package
+      become: true
+      get_url:
+        url: "https://d1vvhvl2y92vvt.cloudfront.net/awscli-exe-linux-x86_64.zip"
+        dest: "/tmp/awscliv2.zip"
+
+    - name: Unzip AWS CLI package
+      become: true
+      ansible.builtin.unarchive:
+        src: "/tmp/awscliv2.zip"
+        dest: "/tmp"
+        remote_src: yes  # Specify that the file is on the remote host
+
+    - name: Install AWS CLI
+      become: true
+      command: "/tmp/aws/install"
+
+    - name: Install Helm
+      become: true
+      shell: curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+
+    - name: Copy Jenkins directory to EC2
+      synchronize:
+        src: ../Jenkins  # Replace with the path to your local directory
+        dest: /home/ubuntu  # Replace with the path on the EC2 instance
+        mode: push
